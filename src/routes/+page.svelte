@@ -84,6 +84,7 @@
 
 <div id="app">
     <PhaserGame bind:phaserRef={phaserRef} currentActiveScene={currentScene} />
+    <button class="button" on:click={changeScene}>Change Scene</button>
     <div>
         <div>
             <button class="button" on:click={changeScene}>Change Scene</button>
@@ -104,7 +105,7 @@
 <style>
     #app {
         width: 100%;
-        height: 100vh;
+        height: 100%;
         overflow: auto;
         display: flex;
         justify-content: center;

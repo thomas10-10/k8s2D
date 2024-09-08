@@ -13,8 +13,8 @@ import CameraControllerPlugin from 'phaser3-rex-plugins/plugins/cameracontroller
 const config: Phaser.Types.Core.GameConfig = {
     type: AUTO,
     pixelArt: true,
-    width: 2025,
-    height: 1668,
+    width: window.innerWidth,
+    height: window.innerHeight,
     parent: 'game-container',
     backgroundColor: '#028af8',
     plugins: {
@@ -41,27 +41,7 @@ const config: Phaser.Types.Core.GameConfig = {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH,
 
-        // Or put game size here
-        // width: 1024,
-        // height: 768,
 
-        // Minimum size
-        min: {
-            width: 200,
-            height: 100
-        },
-        // Or set minimum size like these
-        // minWidth: 800,
-        // minHeight: 600,
-
-        // Maximum size
-        max: {
-            width: 4600,
-            height: 4200
-        },
-        // Or set maximum size like these
-        // maxWidth: 600,
-        // maxHeight: 1200,
 
         zoom: 1,  // Size of game canvas = game size * zoom
     },

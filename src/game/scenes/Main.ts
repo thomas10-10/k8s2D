@@ -10,24 +10,34 @@ export class Main extends Scene
     private zoom: number = 1;
     private zoomSpeed: number = 0.1;
     private minZoom: number = 0.3;
-    private maxZoom: number = 2;
+    private maxZoom: number = 10;
     private graphics: Phaser.GameObjects.Graphics;
     private grid: Phaser.GameObjects.Grid;
 
 
     private isDragging: boolean = false;
-    private previousPointerPosition: { x: number, y: number } = { x: 0, y: 0 };    
+    private previousPointerPosition: { x: number, y: number } = { x: 0, y: 0 };   
+    private intersectionPoints: Phaser.Math.Vector2[] = []; 
 
 
     background: GameObjects.Image;
     logo: GameObjects.Image;
     ship: GameObjects.Image;
     title: GameObjects.Text;
+    title2: GameObjects.Text;
     logoTween: Phaser.Tweens.Tween | null;
     waterField: GameObjects.TileSprite;
     private infoText: GameObjects.Text;
     private cameraController: CameraController;
     private container: Phaser.GameObjects.Container;
+    private container2: Phaser.GameObjects.Container;
+    private container3: Phaser.GameObjects.Container;
+    private container4: Phaser.GameObjects.Container;
+    private container5: Phaser.GameObjects.Container;
+
+    private containers: Phaser.GameObjects.Container[] = [];
+    private titles: Phaser.GameObjects.Text[] = [];
+
 
     constructor ()
     {
@@ -46,7 +56,7 @@ export class Main extends Scene
         //this.add.tileSprite(0, 0, 900, 300, "ship").setOrigin(0, 0);
 
         this.logo = this.add.image(300, 300, 'logo').setDepth(100);
-        this.ship = this.add.image(0, 0, 'ship').setDepth(100).setOrigin(0,0);
+        //this.ship = this.add.image(0, 0, 'ship').setDepth(100).setOrigin(0,0);
         this.ship = this.add.image(0, 400, 'ship').setDepth(100).setOrigin(0,0);
         this.ship.preFX.addGlow(0xff0000, 10, 5, true);
 
@@ -56,17 +66,28 @@ export class Main extends Scene
             stroke: '#000000', strokeThickness: 2,
             align: 'center'
         }).setDepth(100);
-        this.container = this.add.container(0, 800, [this.add.image(0, 0, 'ship').setDepth(100).setOrigin(0,0), this.title]);
+        this.title2 = this.add.text(200, 163, 'kube-2', {
+            fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
+            stroke: '#000000', strokeThickness: 2,
+            align: 'center'
+        }).setDepth(100);
+
+        
         this.graphics = this.add.graphics();
 
+
+        const cellWidth = 1200;
+        const cellHeight = 1200;
+        const width = 19600;
+        const height = 19600;
 
         this.grid = this.add.grid(
             400, // x
             400, // y
-            1600, // width
-            1600, // height
-            600,  // cellWidth
-            600,  // cellHeight
+            width, // width
+            height, // height
+            cellWidth,  // cellWidth
+            cellHeight,  // cellHeight
             0x00ff00, // fillColor (vert)
             0.5, // fillAlpha (transparence)
             0xff0000, // outlineFillColor (rouge)
@@ -76,7 +97,10 @@ export class Main extends Scene
         // Appliquer une rotation pour obtenir l'effet de losange
         this.grid.setRotation(Math.PI / 4); // Rotation de 45 degrés
 
+        this.calculateIntersectionPoints(cellWidth, cellHeight);
 
+        // Afficher les positions des intersections pour vérification
+        this.displayIntersectionPoints();
 
 
 
@@ -92,8 +116,8 @@ export class Main extends Scene
 
         this.cameraController = new CameraController(this, {
             camera: this.cameras.main,
-            minZoom: 0.3,
-            maxZoom: 2,
+            minZoom: 0.1,
+            maxZoom: 100,
             panScroll: true,
             pinchZoom: true,
             boundsScroll: true,
@@ -118,6 +142,42 @@ export class Main extends Scene
 
 
 
+        //this.container = this.add.container(this.intersectionPoints[0].x, this.intersectionPoints[0].y, [this.add.image(0, 0, 'ship').setDepth(100).setOrigin(0,0), this.title]);
+
+        this.createContainers()
+
+
+ 
+
+        const offsetX = 300; // Ajustez selon vos besoins
+        const offsetY = 390; // Ajustez selon vos besoins
+    
+        // Calculer la zone englobante des ships avec offset
+        const bounds = this.calculateBounds(offsetX, offsetY);
+
+
+        // Définir la taille de la caméra (largeur et hauteur de la fenêtre de jeu)
+        const cameraWidth = this.cameras.main.width;
+        const cameraHeight = this.cameras.main.height;
+    
+        // Calculer le facteur de zoom nécessaire pour voir l'ensemble de la zone englobante
+        const zoomX = cameraWidth / bounds.width;
+        const zoomY = cameraHeight / bounds.height;
+        const zoom = Math.min(zoomX, zoomY); // Choisir le plus petit facteur de zoom pour tout afficher
+    
+        // Ajuster la position de la caméra pour centrer la zone englobante
+
+    
+        // Appliquer le zoom à la caméra
+        this.cameras.main.setZoom(zoom);
+        this.zoom=zoom;
+        this.cameras.main.setZoom(this.zoom);
+        
+
+        this.cameras.main.setScroll(
+            (bounds.left + bounds.width / 2 - cameraWidth / 2) * zoom,
+            (bounds.top + bounds.height / 2 - cameraHeight / 2) * zoom
+        );
 
 
 
@@ -125,6 +185,62 @@ export class Main extends Scene
 
         
     }
+
+    private calculateBounds(offsetX: number, offsetY: number) {
+        if (this.containers.length === 0) {
+            return { left: 0, top: 0, width: 0, height: 0 };
+        }
+    
+        // Initialiser les limites avec les coordonnées du premier ship
+        let left = this.containers[0].x;
+        let right = left;
+        let top = this.containers[0].y;
+        let bottom = top;
+    
+        // Trouver les limites englobantes
+        this.containers.forEach(container => {
+            const x = container.x;
+            const y = container.y;
+            
+            // Mise à jour des limites
+            if (x < left) left = x;
+            if (x > right) right = x;
+            if (y < top) top = y;
+            if (y > bottom) bottom = y;
+        });
+    
+        // Ajouter l'offset aux limites
+        left -= offsetX;
+        right += offsetX;
+        top -= offsetY;
+        bottom += offsetY;
+    
+        // Calculer la largeur et la hauteur de la zone englobante
+        const width = right - left;
+        const height = bottom - top;
+    
+        return { left, top, width, height };
+    }
+
+
+    private createContainers() {
+        const titles = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5']; // Titres associés aux conteneurs
+
+        for (let i = 0; i < 100 && i < this.intersectionPoints.length; i++) {
+            const point = this.intersectionPoints[i];
+            const ship = this.add.image(0, 0, 'ship').setDepth(100).setOrigin(0, 0);
+            const title = this.add.text(200, 163, "title"+i, {
+                font: '16px Arial',
+
+            }).setOrigin(0.5);
+
+            const container = this.add.container(point.x, point.y, [ship, title]);
+            this.containers.push(container);
+            this.titles.push(title);
+        }
+    }
+
+
 
     update(time: number, delta: number) {
         
@@ -151,6 +267,44 @@ export class Main extends Scene
 
 
 
+    private calculateIntersectionPoints(cellWidth: number, cellHeight: number) {
+        // Les coordonnées du centre de la grille
+        const centerX = this.grid.x;
+        const centerY = this.grid.y;
+    
+        // Calculer les coordonnées des intersections
+        for (let x = -Math.floor(this.grid.width / (2 * cellWidth)); x <= Math.floor(this.grid.width / (2 * cellWidth)); x++) {
+            for (let y = -Math.floor(this.grid.height / (2 * cellHeight)); y <= Math.floor(this.grid.height / (2 * cellHeight)); y++) {
+                // Calculer les coordonnées du centre de chaque cellule
+                const offsetX = (x + y) * (cellWidth / 2);
+                const offsetY = (y - x) * (cellHeight / 2);
+    
+                const intersectionX = centerX + offsetX;
+                const intersectionY = centerY + offsetY;
+    
+                this.intersectionPoints.push(new Phaser.Math.Vector2(intersectionX, intersectionY));
+            }
+        }
+    
+        // Trier les points du centre vers la périphérie (distance euclidienne du centre)
+        this.intersectionPoints.sort((a, b) => {
+            const distA = Phaser.Math.Distance.Between(centerX, centerY, a.x, a.y);
+            const distB = Phaser.Math.Distance.Between(centerX, centerY, b.x, b.y);
+            return distA - distB;
+        });
+    }
+
+
+
+    private displayIntersectionPoints() {
+        // Créer des cercles pour afficher les positions des intersections
+        this.intersectionPoints.forEach(point => {
+            this.add.circle(point.x, point.y, 5, 0x0000ff, 1); // Cercle bleu
+        });
+
+        // Afficher les coordonnées dans la console pour vérification
+        console.log('Intersection Points:', this.intersectionPoints.map(point => `(${point.x.toFixed(2)}, ${point.y.toFixed(2)})`));
+    }
 
 
 
