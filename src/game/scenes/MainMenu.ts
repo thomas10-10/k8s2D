@@ -26,6 +26,11 @@ export class MainMenu extends Scene
             align: 'center'
         }).setOrigin(0.5).setDepth(100);
 
+        this.cameras.main.setBounds(0, 0, 14000, 600);
+        this.physics.world.setBounds(0, 0, 14000, 600);
+
+
+
         EventBus.emit('current-scene-ready', this);
     }
     
