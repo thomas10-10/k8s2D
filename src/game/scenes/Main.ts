@@ -78,8 +78,8 @@ export class Main extends Scene
 
         const cellWidth = 1200;
         const cellHeight = 1200;
-        const width = 19600;
-        const height = 19600;
+        const width = 50600;
+        const height = 50600;
 
         this.grid = this.add.grid(
             400, // x
@@ -226,13 +226,13 @@ export class Main extends Scene
     private createContainers() {
         const titles = ['Title 1', 'Title 2', 'Title 3', 'Title 4', 'Title 5']; // Titres associés aux conteneurs
 
-        for (let i = 0; i < 100 && i < this.intersectionPoints.length; i++) {
+        for (let i = 0; i < 300 && i < this.intersectionPoints.length; i++) {
             const point = this.intersectionPoints[i];
             const ship = this.add.image(0, 0, 'ship').setDepth(100).setOrigin(0, 0);
             const title = this.add.text(200, 163, "title"+i, {
-                font: '16px Arial',
+                font: '30px Arial',
 
-            }).setOrigin(0.5);
+            }).setOrigin(-0.2);
 
             const container = this.add.container(point.x, point.y, [ship, title]);
             this.containers.push(container);
